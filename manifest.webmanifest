@@ -1,0 +1,17 @@
+{
+  "name": "BAR 夜市",
+  "short_name": "夜市",
+  "description": "お客さんの注文を覚えて出す、バーの記憶ゲーム。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#130d10",
+  "theme_color": "#130d10",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

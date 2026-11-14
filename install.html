@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ホーム画面に追加 | BAR 夜市</title>
+<meta name="theme-color" content="#130d10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+:root{--bg:#130d10;--panel:#24181b;--amber:#eaa43f;--neon:#ff5c93;--fg:#f7ecdf;--muted:#b9a493;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.7;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;gap:14px}
+header img{width:64px;height:64px;border-radius:14px}
+h1{font-family:"Kaisei Decol",serif;font-size:24px;margin:0;color:#ffd5e4;text-shadow:0 0 10px var(--neon)}
+h2{font-size:17px;margin:0 0 8px;color:var(--amber)}
+p{margin:0;color:var(--muted);font-size:14px}
+section{background:var(--panel);border-top:4px solid var(--neon);padding:16px}
+ol{margin:0;padding-left:1.4em;font-size:15px}
+li+li{margin-top:6px}
+b{color:var(--fg)}
+.now{display:none;border-color:var(--amber)}
+.ios .now.ios,.android .now.android{display:block}
+.btn{display:block;text-align:center;font-family:"Kaisei Decol",serif;font-size:20px;background:var(--amber);color:#2a1a14;border-radius:6px;padding:12px;text-decoration:none}
+.btn:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icons/icon-192.png" alt="">
+    <div><h1>BAR 夜市</h1><p>スマホのホーム画面に追加すると、アプリのように遊べます。無料です。</p></div>
+  </header>
+
+  <section class="now ios"><p><b>お使いの iPhone の手順は下の「iPhone」です。</b></p></section>
+  <section class="now android"><p><b>お使いの Android の手順は下の「Android」です。</b></p></section>
+
+  <section>
+    <h2>iPhone・iPad</h2>
+    <ol>
+      <li><b>Safari</b> でこのページを開きます（LINE などの中で開いた場合は、右下のメニューから「Safariで開く」）。</li>
+      <li>画面下の <b>共有ボタン</b>（四角から矢印が上に出ているマーク）を押します。</li>
+      <li>メニューを下へ動かして <b>「ホーム画面に追加」</b> を押します。</li>
+      <li>右上の <b>「追加」</b> を押すと、ホーム画面に夜市のアイコンが出ます。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Android</h2>
+    <ol>
+      <li><b>Chrome</b> でこのページを開きます。</li>
+      <li>右上の <b>︙（縦に点3つ）</b> を押します。</li>
+      <li><b>「ホーム画面に追加」</b> または <b>「アプリをインストール」</b> を押します。</li>
+      <li><b>「追加」「インストール」</b> を押すと、ホーム画面に夜市のアイコンが出ます。</li>
+    </ol>
+  </section>
+
+  <p>一度開けば、電波がないところでも遊べます。新しい版が出たときは、電波のあるところで開くと自動で新しくなります。</p>
+
+  <a class="btn" href="./">ゲームに戻る</a>
+</main>
+<script>
+const ua = navigator.userAgent;
+if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) document.body.classList.add('ios');
+else if (/Android/.test(ua)) document.body.classList.add('android');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

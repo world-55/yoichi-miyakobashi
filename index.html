@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BAR 夜市</title>
+<meta name="description" content="お客さんの注文を覚えて出す、バーの記憶ゲーム。">
+<meta name="theme-color" content="#130d10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="夜市">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+:root{
+  --bg:#130d10;
+  --panel:#24181b;
+  --wood:#6b3d22;
+  --wood-dk:#3e2213;
+  --amber:#eaa43f;
+  --neon:#ff5c93;
+  --fg:#f7ecdf;
+  --muted:#b9a493;
+  --paper:#fff6e8;
+  --ng:#ff4b3e;
+  --ok:#7fd48a;
+  --display:"Kaisei Decol","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:10px;box-sizing:border-box;display:flex;justify-content:center;overflow:hidden;
+}
+.app{position:relative;width:100%;max-width:460px;height:100%;display:flex;flex-direction:column;gap:8px;user-select:none;-webkit-user-select:none}
+.hud{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hud .lv{font-family:var(--display);font-size:15px;color:var(--amber);white-space:nowrap}
+.hud .sc{font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums;line-height:1}
+.lbl{display:block;font-size:10px;letter-spacing:.12em;color:var(--muted);line-height:1;margin-bottom:2px}
+.ngs{display:flex;gap:4px}
+.mute{font-family:var(--body);font-weight:900;font-size:12px;padding:6px 8px;background:var(--panel);color:var(--fg);border:1px solid var(--muted);border-radius:6px;cursor:pointer}
+.mute[aria-pressed="false"]{color:var(--muted);text-decoration:line-through}
+.mute:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.ngs span{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);font-size:9px;font-weight:900;display:grid;place-items:center;color:transparent}
+.ngs span.on{background:var(--ng);border-color:var(--ng);color:#fff}
+
+.scene{position:relative;flex:1 1 auto;min-height:230px;border-radius:10px;overflow:hidden;
+  background:linear-gradient(#21141a, #170e12 55%, var(--wood-dk) 55.2%, var(--wood-dk) 100%)}
+.sign{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:24px;color:#ffd5e4;white-space:nowrap;
+  text-shadow:0 0 4px var(--neon),0 0 12px var(--neon),0 0 24px var(--neon);letter-spacing:.06em;animation:flick 6s infinite}
+@keyframes flick{0%,92%,100%{opacity:1}93%{opacity:.55}94%{opacity:1}96%{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.sign{animation:none}}
+.shelf{position:absolute;left:0;right:0;top:52px;height:62px;display:flex;justify-content:center;align-items:flex-end;gap:4px;padding-inline:12px}
+.shelf::after{content:"";position:absolute;left:8px;right:8px;bottom:-4px;height:5px;background:var(--wood);border-radius:2px;box-shadow:0 0 14px rgba(234,164,63,.35)}
+.shelf svg{flex:none}
+.staff{position:absolute;left:8px;top:4px;display:flex;align-items:flex-start;gap:6px;z-index:7}
+.staff .say{margin-top:6px}
+.staff .say{background:var(--paper);color:#2a1a14;font-weight:700;font-size:12px;padding:5px 9px;border-radius:12px 12px 12px 2px;max-width:200px;line-height:1.35;opacity:0;transform:translateY(4px);transition:.2s}
+.staff .say.on{opacity:1;transform:none}
+.counter{position:absolute;left:0;right:0;bottom:0;height:45%;}
+.counter::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;background:linear-gradient(#8a5230,var(--wood));box-shadow:0 4px 10px rgba(0,0,0,.5)}
+.seats{position:absolute;left:6px;right:6px;bottom:8px;top:-60px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.seat{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;border-radius:10px;cursor:pointer;min-width:0}
+.seat .who{position:relative;z-index:3;width:74px;max-width:100%;transition:transform .35s, opacity .35s}
+.seat.empty .who{opacity:0;transform:translateY(30px)}
+.seat.leaving .who{opacity:0;transform:translateX(30px)}
+.seat.sel{background:rgba(234,164,63,.16);box-shadow:inset 0 0 0 2px var(--amber)}
+.bubble{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%) scale(.85);width:max-content;min-width:56px;max-width:104px;box-sizing:border-box;background:var(--paper);color:#2a1a14;
+  font-weight:900;font-size:13px;line-height:1.35;text-align:center;padding:6px 8px;border-radius:12px;z-index:6;opacity:0;transition:opacity .15s, transform .15s;
+  box-shadow:0 4px 12px rgba(0,0,0,.45);pointer-events:none}
+.bubble.on{transform:translateX(-50%) scale(1)}
+.bubble::after{content:"";position:absolute;bottom:-6px;left:50%;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:var(--paper)}
+.bubble.on{opacity:1}
+.bubble.q{font-size:18px;color:#6b4a3a}
+.bubble.happy{background:#e9f8e9;color:#235a2c}
+.bubble.happy::after{border-top-color:#e9f8e9}
+.bubble.angry{background:#ffe1dc;color:#9a1d12}
+.bubble.angry::after{border-top-color:#ffe1dc}
+.picks{height:22px;display:flex;gap:2px;justify-content:center;margin-top:2px}
+.picks svg{width:22px;height:22px}
+.pat{width:62px;max-width:90%;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;margin-top:2px}
+.pat i{display:block;height:100%;width:100%;background:var(--ok);border-radius:3px}
+.seat.empty .pat,.seat.empty .picks{visibility:hidden}
+.stool{width:40px;height:6px;background:#2a1710;border-radius:3px;margin-top:3px}
+
+.menu{flex:none;display:flex;flex-direction:column;gap:6px}
+.hint{font-size:12px;color:var(--muted);text-align:center;min-height:32px;white-space:pre-line;line-height:1.35;display:flex;align-items:center;justify-content:center}
+.hint.warn{color:var(--ng);font-weight:700}
+.hint.multi{color:var(--amber);font-weight:700;font-size:13px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.item{background:var(--panel);border:1px solid rgba(234,164,63,.25);border-radius:10px;color:var(--fg);font-family:var(--body);font-weight:700;font-size:11px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;cursor:pointer;min-width:0}
+.item svg{width:36px;height:36px}
+.item span{font-size:10px;line-height:1.2;min-height:2.4em;display:flex;align-items:center;text-align:center;word-break:keep-all;overflow-wrap:anywhere}
+.item:active{transform:scale(.96);background:#33232a}
+.item:focus-visible,.choose button:focus-visible,.btn:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* 広告枠（広告がないときは hidden で非表示） */
+.adtag{flex:none;font-size:9px;font-weight:900;letter-spacing:.06em;background:var(--amber);color:#2a1a14;padding:2px 5px;border-radius:3px;line-height:1.2}
+.adtick{flex:none;display:flex;align-items:center;gap:6px;height:26px;padding-left:5px;background:#0c0709;border:1px solid rgba(234,164,63,.35);border-radius:6px;overflow:hidden}
+.adtick.link{cursor:pointer}
+.adtick.link:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.adtrack{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.adtrack span{display:inline-block;padding-left:100%;font-size:12px;font-weight:700;color:#ffe2b8;animation:adscroll var(--dur,20s) linear infinite}
+@keyframes adscroll{to{transform:translateX(-100%)}}
+.adtick.still{height:auto;min-height:26px;padding-block:4px;box-sizing:border-box}
+.adtick.still .adtrack{text-align:center;padding-right:30px;white-space:normal}
+.adtick.still .adtrack span{display:inline;animation:none;padding-left:0;line-height:1.4;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.adtrack span{animation:none;padding-left:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+.flowers{flex:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:4px 2px;background:linear-gradient(#1d1216,#170e12);border:1px solid rgba(234,164,63,.18);border-radius:8px}
+.flower{display:flex;flex-direction:column;align-items:center;min-width:0}
+.flower .bunch{display:flex;justify-content:center;width:100%;min-width:0}
+.flower svg{width:44px;height:40px;max-width:100%;flex:none}
+.flower .bunch svg+svg{margin-left:-12px}
+.flower .fname{margin-top:1px;width:100%;box-sizing:border-box;background:var(--paper);color:#2a1a14;font-size:8.5px;letter-spacing:-.03em;font-weight:900;line-height:1.25;padding:2px 1px;border-radius:2px;text-align:center;
+  word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.flower.empty{visibility:hidden}
+.adban{flex:none;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 10px;box-sizing:border-box;
+  background:var(--panel);border:1px solid rgba(234,164,63,.35);border-radius:8px;overflow:hidden;color:var(--fg);text-decoration:none;font-weight:900;font-size:13px;text-align:center}
+.adban .adtag{position:absolute;top:4px;left:4px}
+.adban img{max-height:100%;max-width:100%;object-fit:contain}
+.adban span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adban:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+.ov{position:absolute;inset:0;background:rgba(10,6,8,.86);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;z-index:10;border-radius:10px}
+.card{background:var(--panel);border-top:5px solid var(--neon);padding:18px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.card h1,.card h2{font-family:var(--display);margin:0;font-weight:700}
+.card h1{font-size:28px;color:#ffd5e4;text-shadow:0 0 10px var(--neon)}
+.card h2{font-size:22px}
+.note{font-size:12px;color:var(--muted);line-height:1.65;margin:0}
+.choose{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.choose button{background:#1a1114;border:2px solid rgba(255,255,255,.12);border-radius:12px;color:var(--fg);font-family:var(--body);font-weight:900;font-size:12px;padding:8px 2px 7px;white-space:nowrap;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.choose button[aria-pressed="true"]{border-color:var(--amber);background:#2c1d16}
+.choose svg{width:76px;height:76px;max-width:100%}
+.btn{font-family:var(--display);font-size:20px;background:var(--amber);color:#2a1a14;border:0;border-radius:6px;padding:12px;cursor:pointer}
+.btn.sub{background:var(--panel);color:var(--fg);font-size:15px;border:1px solid var(--muted)}
+.contact{background:none;border:0;color:var(--muted);font-family:var(--body);font-weight:700;font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px}
+.contact:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.mail{font-size:17px;font-weight:900;color:var(--amber);word-break:break-all;background:#1a1114;border:1px solid rgba(234,164,63,.35);border-radius:6px;padding:10px;user-select:all;-webkit-user-select:all}
+.big{font-family:var(--display);font-size:44px;color:var(--amber);line-height:1;font-variant-numeric:tabular-nums}
+.toast{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:var(--display);font-size:22px;color:var(--amber);background:rgba(19,13,16,.9);padding:10px 18px;border-radius:8px;
+  border:1px solid var(--amber);white-space:nowrap;z-index:5;pointer-events:none;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+</style>
+
+<div class="app" id="app">
+  <div class="adtick" id="adTicker" hidden><span class="adtag">PR</span><div class="adtrack"><span id="adTickText"></span></div></div>
+
+  <div class="hud">
+    <div class="lv" id="lv">レベル1</div>
+    <div><span class="lbl">SCORE</span><span class="sc" id="sc">0</span></div>
+    <div><span class="lbl">NG</span><div class="ngs" id="ngs"><span>NG</span><span>NG</span><span>NG</span></div></div>
+    <button class="mute" id="muteBtn" aria-pressed="true" aria-label="音楽のオンとオフ">♪ ON</button>
+  </div>
+
+  <div class="flowers" id="flowers" hidden></div>
+
+  <div class="scene" id="scene">
+    <div class="sign">BAR 夜市</div>
+    <div class="shelf" id="shelf" aria-hidden="true"></div>
+    <div class="staff"><div id="staffFace"></div><div class="say" id="say"></div></div>
+    <div class="counter"><div class="seats" id="seats"></div></div>
+    <div class="toast" id="toast"></div>  </div>
+
+  <div class="menu">
+    <div class="hint" id="hint">お客さんをタップ → 注文の品をタップ</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <a class="adban" id="adBanner" hidden target="_blank" rel="noopener sponsored"><span class="adtag">AD</span></a>
+
+  <div class="ov" id="selectOv">
+    <div class="card">
+      <h1>BAR 夜市</h1>
+      <p class="note">お客さんの注文は一瞬で消えちゃう。<br>覚えておいて、同じ品を出してあげてね。<br>間違えるか、待たせすぎるとNG。3回でゲームオーバー。</p>
+      <div class="choose" id="choose">
+        <button data-hero="mama" aria-pressed="true"><span class="pic"></span>まこちゃんママ</button>
+        <button data-hero="boy" aria-pressed="false"><span class="pic"></span>みっちゃんママ</button>
+        <button data-hero="asuka" aria-pressed="false"><span class="pic"></span>あすかちゃん</button>
+      </div>
+      <button class="btn" id="open">開店する</button>
+      <button class="contact">アプリゲームと広告のお問い合わせ</button>
+    </div>
+  </div>
+
+  <div class="ov" id="overOv" hidden>
+    <div class="card">
+      <h2>閉店です</h2>
+      <div><span class="lbl">SCORE</span><div class="big" id="final">0</div></div>
+      <p class="note" id="overNote"></p>
+      <button class="btn" id="again">もう一度開店</button>
+      <button class="btn sub" id="change">主人公をえらび直す</button>
+      <button class="contact">アプリゲームと広告のお問い合わせ</button>
+    </div>
+  </div>
+
+  <div class="ov" id="contactOv" hidden style="z-index:12" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
+    <div class="card">
+      <h2 id="contactTitle">お問い合わせ</h2>
+      <p class="note" id="contactNote">アプリゲームと広告のお問い合わせは、<br>下記のメールからお問い合わせください。</p>
+      <a class="mail" id="mailAddr" href="mailto:appstudyjapan@gmail.com" target="_blank" rel="noopener">appstudyjapan@gmail.com</a>
+      <button class="btn sub" id="copyMail">アドレスをコピー</button>
+      <button class="btn" id="closeContact">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+// ---------- 広告 ----------
+// 広告を出すときはここに入れる。空のままなら枠ごと表示されない。
+//   ticker: 流れる文字テロップ。例 ['夜市グループ 新店オープン！', 'ご予約は 03-xxxx-xxxx']
+//   tickerLink: テロップを押したときの行き先。'contact' でお問い合わせを開く、URL ならそのページを開く
+//   banner: バナー枠。例 { text: '広告の文字', image: 'https://…/banner.png', url: 'https://…' }（text か image のどちらかがあれば表示）
+//   tickerScroll: true で文字が流れる、false で止まったまま表示
+const ADS = {
+  ticker: ['夜市インスタグラムはこちらで検索→ nege_miyakobashi_yoichi'],
+  tickerScroll: false,
+  tickerLink: null,
+  banner: null,
+  // お祝いの花（6マス）。企業名を入れると、その場所に花が出る。空文字 '' の場所は花を出さない。全部空なら列ごと非表示
+  // { name, span: 2, count: 3 } で2マス分つなげて、花を3つ並べた大きい枠になる
+  flowers: ['丸小ハム', '伊藤大商事', '三角紅商事', '自由軒', { name: 'SOFTBANDAI株式会社', span: 2, count: 3 }],
+};
+const FLOWER_COLS = [['#ff7aa8', '#ffd1e0', '#ff4f86'], ['#ffd34f', '#fff1b8', '#ff9f2e'], ['#ff6b5a', '#ffc2b8', '#e83a3a'], ['#c99bff', '#efe0ff', '#9a5cf0'], ['#7fd0ff', '#e0f4ff', '#3aa0e8'], ['#ffffff', '#ffe6ef', '#ff9cc0']];
+function flowerSVG(i) {
+  const [a, b, c] = FLOWER_COLS[i % FLOWER_COLS.length];
+  const ring = Array.from({ length: 9 }, (_, k) => {
+    const t = k / 9 * Math.PI * 2;
+    return `<circle cx="${(24 + Math.cos(t) * 10).toFixed(1)}" cy="${(15 + Math.sin(t) * 9).toFixed(1)}" r="5" fill="${k % 2 ? c : a}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 48 44" aria-hidden="true">
+    <path d="M24 25L14 43M24 25L34 43M24 25v18" stroke="#8a5a30" stroke-width="1.6" stroke-linecap="round"/>
+    <ellipse cx="9" cy="21" rx="6" ry="2.6" fill="#3f8a35" transform="rotate(-25 9 21)"/><ellipse cx="39" cy="21" rx="6" ry="2.6" fill="#3f8a35" transform="rotate(25 39 21)"/>
+    ${ring}<circle cx="24" cy="15" r="7.5" fill="${b}"/>
+    <circle cx="24" cy="15" r="5.2" fill="#fff" stroke="#c8241f" stroke-width=".8"/><text x="24" y="17.8" font-size="7.5" font-weight="900" text-anchor="middle" fill="#c8241f">祝</text>
+  </svg>`;
+}
+function setupFlowers() {
+  const slots = (ADS.flowers || []).map(f => typeof f === 'object' && f
+    ? { name: String(f.name || '').trim(), span: Math.max(1, Math.min(6, f.span || 1)), count: Math.max(1, f.count || 1) }
+    : { name: String(f || '').trim(), span: 1, count: 1 });
+  if (!slots.some(s => s.name)) return;
+  const box = document.getElementById('flowers');
+  let col = 0;
+  slots.forEach(s => {
+    const d = document.createElement('div');
+    d.className = s.name ? 'flower' : 'flower empty';
+    if (s.span > 1) d.style.gridColumn = `span ${s.span}`;
+    if (s.name) {
+      const bunch = document.createElement('div'); bunch.className = 'bunch';
+      bunch.innerHTML = Array.from({ length: s.count }, (_, k) => flowerSVG(col + k)).join('');
+      const tag = document.createElement('div'); tag.className = 'fname'; tag.textContent = s.name;
+      d.append(bunch, tag); d.setAttribute('aria-label', `お祝いの花：${s.name}`);
+    }
+    col += s.span;
+    box.appendChild(d);
+  });
+  box.hidden = false;
+}
+setupFlowers();
+function setupAds() {
+  const lines = (ADS.ticker || []).map(s => String(s).trim()).filter(Boolean);
+  if (lines.length) {
+    const t = document.getElementById('adTickText');
+    t.textContent = lines.join('　　◆　　');
+    t.style.setProperty('--dur', `${Math.max(12, t.textContent.length * 0.35)}s`);
+    const box = document.getElementById('adTicker');
+    box.classList.toggle('still', !ADS.tickerScroll);
+    if (ADS.tickerLink) {
+      box.classList.add('link'); box.tabIndex = 0; box.setAttribute('role', 'button'); box.setAttribute('aria-label', `広告：${t.textContent}`);
+      const go = () => ADS.tickerLink === 'contact' ? openContact(box) : window.open(ADS.tickerLink, '_blank', 'noopener');
+      box.addEventListener('click', go);
+      box.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    }
+    box.hidden = false;
+  }
+  const b = ADS.banner;
+  if (b && (b.image || b.text)) {
+    const el = document.getElementById('adBanner');
+    if (b.image) {
+      const img = document.createElement('img');
+      img.src = b.image; img.alt = b.text || '広告';
+      img.onerror = () => { if (!b.text) el.hidden = true; else { img.remove(); addText(); } };
+      el.appendChild(img);
+    } else addText();
+    function addText() { const s = document.createElement('span'); s.textContent = b.text; el.appendChild(s); }
+    if (b.url) el.href = b.url; else el.removeAttribute('target');
+    el.setAttribute('aria-label', `広告：${b.text || ''}`);
+    el.hidden = false;
+  }
+}
+setupAds();
+
+// ---------- お問い合わせ ----------
+const contactOv = document.getElementById('contactOv');
+let contactFrom = null;
+const CONTACT_NOTE = 'アプリゲームと広告のお問い合わせは、<br>下記のメールからお問い合わせください。';
+function openContact(from) {
+  contactFrom = from;
+  document.getElementById('contactTitle').textContent = 'お問い合わせ';
+  document.getElementById('contactNote').innerHTML = CONTACT_NOTE;
+  document.getElementById('closeContact').textContent = '閉じる';
+  contactOv.hidden = false; document.getElementById('closeContact').focus();
+}
+// メールを押したあとは、開いても開かなくてもゲームに戻れる画面にする
+document.getElementById('mailAddr').addEventListener('click', () => {
+  setTimeout(() => {
+    document.getElementById('contactTitle').textContent = 'メールアプリを開いています';
+    document.getElementById('contactNote').innerHTML = 'メールが開かなかったときは、<br>アドレスをコピーして、お使いのメールから送ってください。';
+    const back = document.getElementById('closeContact');
+    back.textContent = 'ゲームに戻る'; back.focus();
+  }, 300);
+});
+document.querySelectorAll('.contact').forEach(b => b.addEventListener('click', () => openContact(b)));
+function closeContact() { contactOv.hidden = true; if (contactFrom) contactFrom.focus(); }
+document.getElementById('closeContact').addEventListener('click', closeContact);
+contactOv.addEventListener('click', e => { if (e.target === contactOv) closeContact(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !contactOv.hidden) closeContact(); });
+document.getElementById('copyMail').addEventListener('click', async e => {
+  const btn = e.currentTarget, addr = document.getElementById('mailAddr').textContent;
+  try { await navigator.clipboard.writeText(addr); btn.textContent = 'コピーしました'; }
+  catch (err) { getSelection().selectAllChildren(document.getElementById('mailAddr')); btn.textContent = '選択しました（長押しでコピー）'; }
+  setTimeout(() => { btn.textContent = 'アドレスをコピー'; }, 1800);
+});
+
+const ITEMS = [
+  { name: 'コーヒー焼酎', svg: `<path d="M12 18h24l-3 22H15z" fill="rgba(255,255,255,.18)" stroke="#d8cbbd" stroke-width="1.5"/><path d="M13.4 25h21.2l-2 14H15.4z" fill="#3b2014"/><rect x="17" y="21" width="8" height="8" rx="1.5" fill="rgba(230,245,255,.75)" transform="rotate(-10 21 25)"/><rect x="25" y="22" width="7" height="7" rx="1.5" fill="rgba(230,245,255,.6)" transform="rotate(12 28 25)"/><ellipse cx="34" cy="13" rx="4" ry="5.5" fill="#5a2f17" transform="rotate(30 34 13)"/><path d="M31.5 10.5q2.5 3 5 5" stroke="#2a140a" stroke-width="1.2" fill="none"/>` },
+  { name: '梅酒', svg: `<path d="M12 18h24l-3 22H15z" fill="rgba(255,255,255,.18)" stroke="#d8cbbd" stroke-width="1.5"/><path d="M13.3 24h21.4l-2.1 15H15.4z" fill="#c98a2a"/><circle cx="24" cy="32" r="5.5" fill="#b9c34a"/><circle cx="22.5" cy="30.5" r="1.6" fill="rgba(255,255,255,.6)"/><rect x="25" y="20" width="7" height="7" rx="1.5" fill="rgba(230,245,255,.65)" transform="rotate(10 28 23)"/>` },
+  { name: 'ハイボール', svg: `<path d="M15 8h18l-2 34H17z" fill="rgba(255,255,255,.16)" stroke="#d8cbbd" stroke-width="1.5"/><path d="M15.6 15h16.8l-1.6 26H17.2z" fill="#e8c770"/><circle cx="21" cy="34" r="1.2" fill="#fff8d8"/><circle cx="26" cy="28" r="1" fill="#fff8d8"/><circle cx="23" cy="22" r="1.3" fill="#fff8d8"/><circle cx="27" cy="37" r="1" fill="#fff8d8"/><circle cx="33" cy="11" r="6" fill="#f4e14a" stroke="#e0c22a" stroke-width="1.2"/><path d="M33 5v12M27 11h12M29 7l8 8M37 7l-8 8" stroke="#fff6b0" stroke-width=".8"/>` },
+  { name: 'ハーブ酒', svg: `<path d="M16 14h16l-2.5 14a5.5 5.5 0 0 1-11 0z" fill="rgba(255,255,255,.18)" stroke="#d8cbbd" stroke-width="1.5"/><path d="M17.2 19h13.6l-1.7 9a5 5 0 0 1-10.2 0z" fill="#4f9a4a"/><path d="M24 33v8M18 42h12" stroke="#d8cbbd" stroke-width="1.8" stroke-linecap="round"/><path d="M30 13c3-6 9-6 10-7-1 5-4 9-10 7z" fill="#6cc05a"/><path d="M30 13l7-5" stroke="#3f8a35" stroke-width="1"/>` },
+  { name: 'いいちこ', svg: `<path d="M8 14h12l2 6v20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V20z" fill="#cfdde3" stroke="#9fb3bd" stroke-width="1.2"/><rect x="10" y="8" width="8" height="7" rx="1" fill="#c9a24a"/><rect x="8" y="24" width="12" height="11" rx="1" fill="#fffaf0"/><text x="14" y="32.5" text-anchor="middle" font-size="8" font-weight="900" fill="#2a1a14">麦</text><path d="M24 22h18l-2.5 18h-13z" fill="rgba(255,255,255,.18)" stroke="#d8cbbd" stroke-width="1.4"/><path d="M25 28h16l-1.7 11H26.7z" fill="#eef5f7"/><rect x="28" y="25" width="6" height="6" rx="1.2" fill="rgba(200,230,245,.9)" transform="rotate(-10 31 28)"/>` },
+  { name: 'ハブ酒', svg: `<path d="M13 12h22v4c4 2 6 6 6 11v11a4 4 0 0 1-4 4H11a4 4 0 0 1-4-4V27c0-5 2-9 6-11z" fill="#b9781f" stroke="#7a4a12" stroke-width="1.4"/><rect x="12" y="7" width="24" height="6" rx="2" fill="#3a2a1a"/><path d="M15 36c-2-5 4-8 9-6s10-1 9-5-7-4-10-1" stroke="#5a6a2a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M15 36c-2-5 4-8 9-6s10-1 9-5-7-4-10-1" stroke="#a4b04a" stroke-width="1.2" stroke-dasharray="2 2" fill="none"/><circle cx="22.5" cy="24" r="2.6" fill="#5a6a2a"/><circle cx="21.8" cy="23.4" r=".8" fill="#f4e14a"/><path d="M10 20q2-2 4-2" stroke="rgba(255,255,255,.4)" stroke-width="1.5" fill="none"/>` },
+  { name: 'ハーブの恵み', svg: `<path d="M19 4h10v9c4 2 6 5 6 9v18a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3V22c0-4 2-7 6-9z" fill="#1f5a3a" stroke="#123a24" stroke-width="1.2"/><rect x="18.5" y="2" width="11" height="5" rx="1.5" fill="#c9a24a"/><rect x="15" y="23" width="18" height="14" rx="2" fill="#f3ecd8"/><path d="M24 34c-5-2-6-7-4-9 3 0 5 4 4 9zM24 34c4-3 7-6 6-9-3 0-6 4-6 9z" fill="#5aa648"/><path d="M24 34v-6" stroke="#3f8a35" stroke-width="1"/><path d="M16 14q1 6 0 24" stroke="rgba(255,255,255,.25)" stroke-width="1.6" fill="none"/>` },
+  { name: '韓国のり', svg: `<rect x="9" y="20" width="30" height="20" rx="2" fill="#1d3a24" transform="rotate(-8 24 30)"/><rect x="9" y="17" width="30" height="20" rx="2" fill="#24472c" transform="rotate(4 24 27)"/><rect x="9" y="14" width="30" height="20" rx="2" fill="#2d5634"/><path d="M12 20h24M12 26h24" stroke="rgba(255,255,255,.12)" stroke-width="1"/><g fill="#f4efe0"><circle cx="15" cy="18" r=".9"/><circle cx="22" cy="23" r=".9"/><circle cx="30" cy="17" r=".9"/><circle cx="34" cy="28" r=".9"/><circle cx="18" cy="29" r=".9"/></g><path d="M11 15h26" stroke="rgba(255,255,255,.25)" stroke-width="1.2"/>` },
+  { name: 'チーズ', svg: `<path d="M6 32l26-18 10 10v10H6z" fill="#f2c84b"/><path d="M6 32h36v6H6z" fill="#e0ad2e"/><path d="M6 32l26-18 10 10" fill="none" stroke="#c9961f" stroke-width="1.2"/><circle cx="20" cy="29" r="2.5" fill="#d9a72c"/><circle cx="31" cy="25" r="2" fill="#d9a72c"/><circle cx="36" cy="34" r="1.8" fill="#c9961f"/><circle cx="14" cy="35" r="1.5" fill="#c9961f"/>` },
+  { name: 'ポテト', svg: `<rect x="13" y="14" width="22" height="30" rx="3" fill="#c8241f"/><rect x="13" y="14" width="22" height="4" fill="#9a1a16"/><rect x="13" y="40" width="22" height="4" rx="2" fill="#9a1a16"/><rect x="16" y="22" width="16" height="11" rx="2" fill="#f7e9c4"/><path d="M18 30c2-4 4-4 6-2s4 2 6-2" stroke="#d9a43a" stroke-width="2.4" fill="none" stroke-linecap="round"/><rect x="15" y="18" width="2.5" height="24" rx="1" fill="rgba(255,255,255,.22)"/><g fill="#f2c55a" stroke="#c99a30" stroke-width=".7"><path d="M12 13q12-5 24 0q-12 3-24 0z"/><path d="M12 10q12-5 24 0q-12 3-24 0z"/><path d="M12 7q12-5 24 0q-12 3-24 0z"/></g>` },
+];
+const icon = (i, s = 48) => `<svg viewBox="0 0 48 48" width="${s}" height="${s}" aria-hidden="true">${ITEMS[i].svg}</svg>`;
+
+// ---------- staff ----------
+function staffSVG(kind, size = 64) {
+  // まこちゃん: 黒髪ロングを頭の上で結んだハイポニーテール、ふっくら顔のお姉さん。流し前髪、ローズのワンピース、パールのイヤリング
+  if (kind === 'mama') return `<svg viewBox="0 0 80 80" width="${size}" height="${size}" aria-hidden="true">
+    <path d="M38 12c-10-7-22-3-23 8-1 9 2 16-1 26 7-4 10-11 10-19 0-7 4-11 14-15z" fill="#161012"/>
+    <path d="M22 15c-4 3-5 9-4 15M18 26c-1 5 0 10-1 15" stroke="rgba(255,255,255,.18)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="40" cy="13" rx="6" ry="4.2" fill="#161012"/>
+    <path d="M23 43c-2-16 6-26 17-26s19 10 17 26z" fill="#161012"/>
+    <path d="M14 80c2-15 12-21 26-21s24 6 26 21z" fill="#b8325e"/>
+    <path d="M30 60q10 8 20 0" fill="#f6dbc6"/>
+    <path d="M34 55h12v5l-6 4-6-4z" fill="#f6dbc6"/>
+    <ellipse cx="40" cy="41.5" rx="16" ry="17" fill="#f6dbc6"/>
+    <path d="M24 39c-1-13 6-21 16-21s17 8 16 20c-3-6-8-10-13-11-4 5-11 9-19 12z" fill="#161012"/>
+    <path d="M24.5 38c-1.5 4-1 8 0 12M55.5 38c1.5 4 1 8 0 12" stroke="#161012" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M35 22q8-1 14 5" stroke="rgba(255,255,255,.22)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M30.5 37q3-1.6 6.2-.2M43.3 36.8q3.2-1.4 6.2.2" stroke="#2a1a1c" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="34" cy="42" rx="2.1" ry="2.2" fill="#2a1a1c"/><ellipse cx="46" cy="42" rx="2.1" ry="2.2" fill="#2a1a1c"/>
+    <circle cx="34.7" cy="41.4" r=".6" fill="#fff"/><circle cx="46.7" cy="41.4" r=".6" fill="#fff"/>
+    <path d="M37 41q-3-2.2-6.5-.2l-1.5-.6M43 41q3-2.2 6.5-.2l1.5-.6" stroke="#1a1214" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="30.5" cy="47.5" rx="3" ry="1.6" fill="rgba(220,110,120,.2)"/><ellipse cx="49.5" cy="47.5" rx="3" ry="1.6" fill="rgba(220,110,120,.2)"/><path d="M39.5 45.5l-.6 1.6h1.4" stroke="#d9b49a" stroke-width=".8" fill="none" stroke-linecap="round"/>
+    <path d="M36.3 51q3.7 2.6 7.4 0q-1.8-1-3.7-.4q-1.9-.6-3.7.4z" fill="#b0283e"/>
+    <circle cx="23.5" cy="48" r="1.8" fill="#fff8f0" stroke="#d8c8b8" stroke-width=".5"/><circle cx="56.5" cy="48" r="1.8" fill="#fff8f0" stroke="#d8c8b8" stroke-width=".5"/>
+    <circle cx="34" cy="65" r="1.4" fill="#fff8f0"/><circle cx="40" cy="67" r="1.4" fill="#fff8f0"/><circle cx="46" cy="65" r="1.4" fill="#fff8f0"/></svg>`;
+  // あすかちゃん: 金髪ポニーテール、30歳くらい、パープルのドレス、小さなイヤリング
+  if (kind === 'asuka') return `<svg viewBox="0 0 80 80" width="${size}" height="${size}" aria-hidden="true">
+    <path d="M50 17c11-5 19 2 18 14-1 11-7 19-4 30-7-6-11-15-10-24 1-8-1-14-4-20z" fill="#e8c25a"/>
+    <path d="M58 22c4 4 5 10 3 18M62 30c1 6 0 12-1 18" stroke="#fff0b0" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    <path d="M23 42c-2-16 6-26 17-26s19 10 17 26z" fill="#e8c25a"/>
+    <path d="M14 80c2-15 12-20 26-20s24 5 26 20z" fill="#6a2f9a"/>
+    <path d="M24 66q16-6 32 0" stroke="#e8c96a" stroke-width="1.3" fill="none"/>
+    <path d="M34 55h12v5l-6 4-6-4z" fill="#f8dfcb"/>
+    <ellipse cx="40" cy="41.5" rx="15.5" ry="17" fill="#f8dfcb"/>
+    <path d="M24 39c-1-13 6-21 16-21s17 7 16 18c-4-4-9-7-14-7-5 2-11 5-18 10z" fill="#e8c25a"/>
+    <path d="M32 22q7-3 14 1" stroke="#fff0b0" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M24.5 37c-2 6-2 11 0 16M55.5 37c2 6 2 11 0 16" stroke="#e8c25a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <circle cx="52" cy="18" r="2.8" fill="#ff6fa0"/><circle cx="52" cy="18" r="1" fill="#fff"/>
+    <path d="M30.5 37q3-1.6 6.2-.2M43.3 36.8q3.2-1.4 6.2.2" stroke="#9a7030" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="34" cy="42" rx="2.2" ry="2.4" fill="#3a2418"/><ellipse cx="46" cy="42" rx="2.2" ry="2.4" fill="#3a2418"/>
+    <circle cx="34.8" cy="41.3" r=".7" fill="#fff"/><circle cx="46.8" cy="41.3" r=".7" fill="#fff"/>
+    <path d="M37.2 41q-3.2-2.4-6.7-.2l-1.7-.8M42.8 41q3.2-2.4 6.7-.2l1.7-.8" stroke="#1a1214" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="30.5" cy="47.5" rx="3" ry="1.7" fill="rgba(240,110,140,.28)"/><ellipse cx="49.5" cy="47.5" rx="3" ry="1.7" fill="rgba(240,110,140,.28)"/><path d="M39.5 45.5l-.6 1.6h1.4" stroke="#d9b49a" stroke-width=".8" fill="none" stroke-linecap="round"/>
+    <path d="M36.3 51q3.7 2.6 7.4 0q-1.8-1-3.7-.4q-1.9-.6-3.7.4z" fill="#d83a6a"/><circle cx="41.3" cy="51.8" r=".45" fill="#fff" opacity=".8"/>
+    <circle cx="25" cy="49" r="1.6" fill="#ff9cc0" stroke="#e8c96a" stroke-width=".6"/><circle cx="55" cy="49" r="1.6" fill="#ff9cc0" stroke="#e8c96a" stroke-width=".6"/></svg>`;
+  // みっちゃん: 黒髪ロング、ティールのドレス、ほくろ、ドロップイヤリング
+  return `<svg viewBox="0 0 80 80" width="${size}" height="${size}" aria-hidden="true">
+    <path d="M16 70c-6-11-7-26-2-38 4-10 13-16 26-16s22 6 26 16c5 12 4 27-2 38-3-3-6-5-9-6H25c-3 1-6 3-9 6z" fill="#161012"/>
+    <path d="M14 80c2-16 12-22 26-22s24 6 26 22z" fill="#1f6a6a"/>
+    <path d="M30 59q10 10 20 0" fill="#f3d2b6"/>
+    <ellipse cx="40" cy="40" rx="15" ry="17" fill="#f3d2b6"/>
+    <path d="M24 38c1-12 8-19 18-18 8 1 14 6 15 16-5-5-10-8-15-8-4 3-11 6-18 10z" fill="#161012"/>
+    <path d="M24 36c-3 8-3 18-1 30M56 36c3 8 3 18 1 30" stroke="#161012" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M35 23q8 0 14 6" stroke="rgba(255,255,255,.2)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <path d="M31 39q3-2.5 6 0M43 39q3-2.5 6 0" stroke="#2a1a1c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M30.5 37l-1.6-1.4M49.5 37l1.6-1.4" stroke="#2a1a1c" stroke-width="1.1" stroke-linecap="round"/>
+    <ellipse cx="31" cy="45" rx="3" ry="1.8" fill="rgba(230,100,110,.35)"/><ellipse cx="49" cy="45" rx="3" ry="1.8" fill="rgba(230,100,110,.35)"/>
+    <path d="M36 48q4 3 8 0q-4 1-8 0z" fill="#b8324a"/>
+    <circle cx="46.5" cy="50" r=".9" fill="#3a2a2a"/>
+    <path d="M25 46v4" stroke="#c9a24a" stroke-width="1"/><circle cx="25" cy="51.5" r="2" fill="#7fd0d0" stroke="#c9a24a" stroke-width=".8"/>
+    <path d="M55 46v4" stroke="#c9a24a" stroke-width="1"/><circle cx="55" cy="51.5" r="2" fill="#7fd0d0" stroke="#c9a24a" stroke-width=".8"/>
+    <path d="M28 64q12 6 24 0" stroke="#c9a24a" stroke-width="1.2" fill="none"/></svg>`;
+}
+const SKINS = ['#f3d2b6', '#e8c0a0', '#f6dcc6', '#eccaa8'];
+const HAIRS = ['#2a1a1c', '#5a3420', '#8a8a8a', '#1d1d2a', '#4a2a1c'];
+const SHIRTS = ['#3a5a8a', '#7a3a5a', '#2e6a4a', '#8a6a2a', '#4a4a5a', '#a0412d', '#2a4a6a'];
+function customerCfg() {
+  const p = a => a[Math.floor(Math.random() * a.length)];
+  const cfg = { skin: p(SKINS), hair: p(HAIRS), shirt: p(SHIRTS), style: Math.floor(Math.random() * 5), glasses: Math.random() < 0.3, beard: Math.random() < 0.2, kind: null, eye: '#2a1a1c', extra: '' };
+  // 外国人のお客さんもときどき来る（金髪の欧米の人、インドの人、アフリカ系の人）
+  const r = Math.random();
+  // 日本人と外国人がだいたい半々でランダムに来る
+  if (r < 0.2) {
+    cfg.kind = 'western';
+    cfg.skin = p(['#f8e2d0', '#f3d2b6', '#f6d8c4']);
+    cfg.hair = p(['#f0d070', '#e8c25a', '#f6e0a0', '#c98a4a']);
+    cfg.style = p([0, 1, 1, 4]);
+    cfg.eye = p(['#3a7ac8', '#4a9ad8', '#3a8a6a']);
+    cfg.beard = cfg.style !== 1 && Math.random() < 0.35;
+    cfg.extra = `<path d="M40 41v5l-1.6 1" stroke="rgba(150,90,70,.45)" stroke-width="1" fill="none" stroke-linecap="round"/>`;
+  } else if (r < 0.37) {
+    cfg.kind = 'indian';
+    cfg.skin = p(['#a8704a', '#9a6040', '#b8805a']);
+    cfg.hair = '#141214'; cfg.beard = false;
+    const v = Math.random();
+    if (v < 0.35) { // ターバンとひげ
+      const col = p(['#e8a020', '#c8302a', '#2a5aa0', '#e86a8a']);
+      cfg.style = 2;
+      cfg.extra = `<path d="M22 34c-3-15 6-25 18-25s21 10 18 25c-5-4-11-6-18-6s-13 2-18 6z" fill="${col}"/><path d="M25 22q11 1 15 11M55 22q-11 1-15 11M27 29q13-5 26 0" stroke="rgba(0,0,0,.2)" stroke-width="1.3" fill="none"/><path d="M34 46q6-3 12 0q-6 1.5-12 0z" fill="#141214"/><path d="M27 47c2 9 7 13 13 13s11-4 13-13c-3 2-6 3-8 3q-5 3-10 0c-2 0-5-1-8-3z" fill="#141214"/>`;
+    } else if (v < 0.7) { // 口ひげ
+      cfg.style = 0;
+      cfg.extra = `<path d="M34 45.5q6-3 12 0q-6 1.5-12 0z" fill="#141214"/>`;
+    } else { // 女性：ロングヘアとビンディ
+      cfg.style = 1;
+      cfg.extra = `<circle cx="40" cy="32.5" r="1.3" fill="#d8202a"/><circle cx="25.5" cy="45" r="1.2" fill="#e8c96a"/><circle cx="54.5" cy="45" r="1.2" fill="#e8c96a"/>`;
+    }
+  } else if (r < 0.5) {
+    cfg.kind = 'african';
+    cfg.skin = p(['#6a4028', '#7a4a30', '#5a3420']);
+    cfg.hair = '#141214'; cfg.style = -1;
+    cfg.extra = `<g fill="#141214">${[[27,28],[31,23],[36,20],[42,19.5],[48,21],[52,25],[54,30],[26,33],[33,25],[39,23],[45,23.5],[50,28]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.4"/>`).join('')}</g>`;
+  }
+  return cfg;
+}
+function customerSVG(c, mood = 'normal') {
+  const hair = [
+    `<path d="M22 34c-1-12 7-19 18-19s19 7 18 19c-3-6-9-9-18-9s-15 3-18 9z" fill="${c.hair}"/>`,
+    `<path d="M20 50c-3-22 6-35 20-35s23 13 20 35l-5-2c1-10-2-18-7-21-6 3-14 4-21 2-3 4-4 11-3 19z" fill="${c.hair}"/>`,
+    `<path d="M25 30c2-8 8-12 15-12s13 4 15 12c-4-3-9-4-15-4s-11 1-15 4z" fill="${c.hair}" opacity=".9"/>`,
+    `<path d="M20 30c0-9 9-14 20-14s20 5 20 14z" fill="${c.shirt}"/><path d="M16 30h48v4H16z" fill="${c.shirt}" opacity=".85"/>`,
+    `<path d="M22 36c-2-14 6-21 18-21s20 7 18 21c-2-3-4-5-6-6l-2-5-10 3-10-3-2 5c-2 1-4 3-6 6z" fill="${c.hair}"/>`,
+  ][c.style] || '';
+  const mouth = mood === 'happy' ? `<path d="M34 47q6 6 12 0z" fill="#8a2a24"/>`
+    : mood === 'angry' ? `<path d="M34 50q6-5 12 0" stroke="#5a1a14" stroke-width="2" fill="none" stroke-linecap="round"/>`
+    : `<path d="M36 48q4 2 8 0" stroke="#6a3a2a" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  const brows = mood === 'angry' ? `<path d="M30 33l7 3M50 33l-7 3" stroke="#2a1a1c" stroke-width="2" stroke-linecap="round"/>` : '';
+  const eyes = mood === 'happy' ? `<path d="M31 40q3-3 6 0M43 40q3-3 6 0" stroke="#2a1a1c" stroke-width="2" fill="none" stroke-linecap="round"/>`
+    : `<circle cx="34" cy="39" r="2" fill="${c.eye || '#2a1a1c'}"/><circle cx="46" cy="39" r="2" fill="${c.eye || '#2a1a1c'}"/>`;
+  return `<svg viewBox="0 0 80 80" aria-hidden="true" style="width:100%;height:auto;display:block">
+    <path d="M12 80c2-15 13-22 28-22s26 7 28 22z" fill="${c.shirt}"/>
+    <path d="M34 58l6 7 6-7" fill="${c.skin}"/>
+    <ellipse cx="40" cy="39" rx="15" ry="17" fill="${c.skin}"/>
+    ${hair}${brows}${eyes}${c.extra || ''}
+    ${c.glasses ? `<g fill="none" stroke="#2a1a1c" stroke-width="1.6"><circle cx="34" cy="39" r="5"/><circle cx="46" cy="39" r="5"/><path d="M39 39h2"/></g>` : ''}
+    ${c.beard ? `<path d="M27 46c2 9 7 12 13 12s11-3 13-12c-3 4-7 5-13 5s-10-1-13-5z" fill="${c.hair}" opacity=".85"/>` : ''}
+    ${mouth}
+    <ellipse cx="30" cy="45" rx="3" ry="1.6" fill="rgba(230,110,100,${mood === 'angry' ? '.55' : '.25'})"/><ellipse cx="50" cy="45" rx="3" ry="1.6" fill="rgba(230,110,100,${mood === 'angry' ? '.55' : '.25'})"/>
+  </svg>`;
+}
+
+const shelf = document.getElementById('shelf');
+const BOTTLES = ['#4a2a12', '#2d5a2e', '#8a1f2a', '#c98a2a', '#e8e1d0', '#1d3a5a', '#6b3d22', '#3a6a5a', '#a0412d', '#d9b45a', '#2a1a1c'];
+BOTTLES.forEach((col, i) => {
+  const h = 42 + (i * 7) % 18;
+  shelf.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 20 ${h}" width="20" height="${h}"><rect x="7" y="0" width="6" height="${h * 0.35}" rx="1.5" fill="${col}"/><rect x="2" y="${h * 0.3}" width="16" height="${h * 0.7}" rx="4" fill="${col}"/><rect x="4" y="${h * 0.55}" width="12" height="${h * 0.2}" fill="rgba(247,236,223,.55)"/><rect x="4" y="${h * 0.34}" width="2.5" height="${h * 0.5}" rx="1" fill="rgba(255,255,255,.22)"/></svg>`);
+});
+const grid = document.getElementById('grid');
+ITEMS.forEach((it, i) => {
+  const b = document.createElement('button');
+  b.className = 'item'; b.id = `item${i}`;
+  b.innerHTML = `${icon(i, 40)}<span>${it.name}</span>`;
+  b.addEventListener('click', () => serveItem(i));
+  grid.appendChild(b);
+});
+const seatsEl = document.getElementById('seats');
+const SEATS = 4;
+const seatEls = [];
+for (let i = 0; i < SEATS; i++) {
+  const s = document.createElement('div');
+  s.className = 'seat empty'; s.setAttribute('role', 'button'); s.setAttribute('aria-label', `${i + 1}番の席`);
+  s.innerHTML = `<div class="who"><div class="bubble"></div><div class="face"></div></div><div class="picks"></div><div class="pat"><i></i></div><div class="stool"></div>`;
+  s.addEventListener('click', () => selectSeat(i));
+  seatsEl.appendChild(s); seatEls.push(s);
+}
+
+let hero = 'mama', seats, score, ng, served, level, spawnT, selected, running, lastT;
+const $ = id => document.getElementById(id);
+const MSGS = {
+  normal: { happy: ['ありがとう！', 'これこれ！', 'さすが！', 'おいしい〜'], wrong: 'ちがうよ！', slow: '待ちくたびれた…' },
+  western: { happy: ['Thank you!', 'Perfect!', 'おいしい！', 'Amazing!'], wrong: 'No no, ちがうよ！', slow: 'Still waiting…' },
+  indian:  { happy: ['Dhanyavaad!', 'Very good!', 'ありがとう！', 'Bahut accha!'], wrong: 'Wrong one!', slow: 'まだかな…' },
+  african: { happy: ['Thank you!', 'Nice!', 'さいこう！', 'Great!'], wrong: 'Not this one!', slow: 'So slow…' },
+};
+function msgFor(c, kind) {
+  const m = MSGS[c.cfg.kind] || MSGS.normal;
+  return kind === 'happy' ? m.happy[Math.floor(Math.random() * m.happy.length)] : m[kind];
+}
+function readBest() { try { return +localStorage.getItem('barOboeteteBest') || 0; } catch (e) { return 0; } }
+function writeBest(v) { try { localStorage.setItem('barOboeteteBest', String(v)); } catch (e) {} }
+
+const LINES = {
+  mama:  { hello: 'いらっしゃい♪ まこです', serve: n => `はい、${n}ね♪`, sorry: 'あら、ごめんなさいね…', level: 'お店がにぎわってきたわね', bye: 'またいらしてね' },
+  boy:   { hello: 'いらっしゃい、みっちゃんです♪', serve: n => `${n}、お待たせ♪`, sorry: 'ごめんなさい、すぐ直すわね', level: '今夜はにぎやかね', bye: 'また来てね♪' },
+  asuka: { hello: 'いらっしゃいませ〜♡ あすかです', serve: n => `${n}どうぞ〜♡`, sorry: 'やだ、ごめんね〜！', level: '今夜もりあがってる〜♡', bye: 'また指名してね♡' },
+};
+let sayTimer;
+function say(text) {
+  const el = $('say'); el.textContent = text; el.classList.add('on');
+  clearTimeout(sayTimer); sayTimer = setTimeout(() => el.classList.remove('on'), 1400);
+}
+let toastTimer;
+function toast(text) {
+  const el = $('toast'); el.textContent = text; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 1600);
+}
+// お客様が2人以上いるときは、先にお客様を選ぶように案内する
+function waitingCount() { return seats ? seats.filter(c => c && ['order', 'wait'].includes(c.state)).length : 0; }
+const MULTI_HINT = 'お客様が2人以上の時は、\n必ずお客様を選んでからメニューを選んでね';
+function defaultHint() { return waitingCount() >= 2 ? MULTI_HINT : 'お客さんをタップ → 注文の品をタップ'; }
+function hint(text, warn) {
+  const el = $('hint'); el.textContent = text; el.classList.toggle('warn', !!warn);
+  el.classList.toggle('multi', !warn && text === MULTI_HINT);
+  if (warn) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+}
+
+const showTime = () => Math.max(0.8, 2.3 - (level - 1) * 0.22);
+const maxGuests = () => Math.min(4, level + 1);
+const spawnGap = () => Math.max(1.8, 4.2 - (level - 1) * 0.4);
+const patience = () => Math.max(14, 26 - (level - 1) * 1.5);
+const orderSize = () => {
+  if (level < 2) return 1;
+  const r = Math.random();
+  if (level < 4) return r < 0.3 ? 1 : r < 0.75 ? 2 : 3;
+  return r < 0.1 ? 1 : r < 0.55 ? 2 : 3;
+};
+
+let ac = null;
+function audio() { try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; } }
+function tone(f, d, type = 'sine', v = 0.08, delay = 0) {
+  if (!ac) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d + 0.02);
+}
+const sBell = () => { tone(1320, 0.4, 'sine', 0.05); tone(1760, 0.5, 'sine', 0.04, 0.08); };
+const sClink = () => { tone(2093, 0.25, 'triangle', 0.06); tone(2637, 0.3, 'sine', 0.04, 0.05); };
+const sOk = () => { tone(784, 0.12, 'triangle', 0.07); tone(1047, 0.18, 'triangle', 0.07, 0.09); };
+const sNg = () => { tone(180, 0.35, 'sawtooth', 0.07); tone(140, 0.35, 'sawtooth', 0.06, 0.12); };
+
+let musicOn = true, mGain = null, mTimer = null, beat = 0, nextBeat = 0;
+const BASS = [[38,41,45,48],[43,47,50,53],[36,40,43,47],[45,49,52,55]];
+const CHORDS = [[62,65,69,72],[62,65,67,71],[60,64,67,71],[61,64,67,69]];
+const MELODY = [[74,0,72,0],[71,0,0,67],[71,72,0,0],[73,0,76,0], [77,0,76,74],[74,0,71,0],[72,0,0,0],[69,0,0,0]];
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+function mNote(f, t, d, type, v) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(mGain); o.start(t); o.stop(t + d + 0.05);
+}
+function mScheduler() {
+  if (!ac) return;
+  const q = 60 / (92 + Math.min(30, (level - 1) * 5));
+  while (nextBeat < ac.currentTime + 0.15) {
+    const bar = Math.floor(beat / 4) % 4, b = beat % 4, t = nextBeat;
+    mNote(hz(BASS[bar][b]), t, q * 0.95, 'triangle', 0.5);
+    mNote(5200, t, 0.08, 'sine', 0.05);
+    mNote(5200, t + q * 0.66, 0.05, 'sine', 0.035);
+    if (b === 1 || b === 3) CHORDS[bar].forEach(m => mNote(hz(m), t + (b === 3 ? q * 0.66 : 0), q * 1.1, 'sine', 0.09));
+    const mel = MELODY[Math.floor(beat / 4) % 8][b];
+    if (mel) mNote(hz(mel + 12), t, q * 0.9, 'sine', 0.07);
+    beat++; nextBeat += q;
+  }
+}
+function startMusic() {
+  if (!ac || mTimer) return;
+  if (!mGain) { mGain = ac.createGain(); mGain.connect(ac.destination); }
+  mGain.gain.value = musicOn ? 0.12 : 0;
+  beat = 0; nextBeat = ac.currentTime + 0.05;
+  mTimer = setInterval(mScheduler, 30);
+}
+function stopMusic() { clearInterval(mTimer); mTimer = null; }
+$('muteBtn').addEventListener('click', () => {
+  musicOn = !musicOn;
+  $('muteBtn').textContent = musicOn ? '♪ ON' : '♪ OFF';
+  $('muteBtn').setAttribute('aria-pressed', String(musicOn));
+  if (mGain) mGain.gain.value = musicOn ? 0.12 : 0;
+});
+
+function updateHud() {
+  $('sc').textContent = score; $('lv').textContent = `レベル${level}`;
+  [...$('ngs').children].forEach((el, i) => el.classList.toggle('on', i < ng));
+}
+function start() {
+  audio();
+  seats = Array(SEATS).fill(null);
+  score = 0; ng = 0; served = 0; level = 1; spawnT = 0.8; selected = -1; running = true;
+  seatEls.forEach((_, i) => renderSeat(i));
+  $('staffFace').innerHTML = staffSVG(hero, 48);
+  $('selectOv').hidden = true; $('overOv').hidden = true;
+  updateHud(); hint(defaultHint());
+  say(LINES[hero].hello);
+  startMusic();
+}
+function seatGuest(i, cfg, delay = 0) {
+  const n = orderSize(), order = [];
+  while (order.length < n) { const k = Math.floor(Math.random() * ITEMS.length); if (!order.includes(k)) order.push(k); }
+  const pat = patience() + (n - 1) * 6 + delay;
+  seats[i] = { cfg, order, picks: [], state: 'enter', t: -delay, show: showTime() + (n - 1) * 0.7, pat, maxPat: pat };
+  renderSeat(i);
+}
+function spawn() {
+  const free = seats.map((s, i) => s ? -1 : i).filter(i => i >= 0);
+  if (!free.length || seats.filter(Boolean).length >= maxGuests()) return false;
+  seatGuest(free[Math.floor(Math.random() * free.length)], customerCfg());
+  sBell();
+  return true;
+}
+function renderSeat(i) {
+  const el = seatEls[i], c = seats[i];
+  const bub = el.querySelector('.bubble'), who = el.querySelector('.face'), picks = el.querySelector('.picks');
+  el.classList.toggle('sel', selected === i && !!c);
+  if (!c) {
+    el.classList.add('empty'); el.classList.remove('leaving');
+    bub.className = 'bubble'; who.innerHTML = ''; picks.innerHTML = '';
+    return;
+  }
+  el.classList.remove('empty');
+  el.classList.toggle('leaving', c.state === 'leave');
+  const mood = c.state === 'happy' ? 'happy' : c.state === 'angry' ? 'angry' : 'normal';
+  if (who.dataset.mood !== mood || !who.innerHTML) { who.innerHTML = customerSVG(c.cfg, mood); who.dataset.mood = mood; }
+  picks.innerHTML = c.picks.map(p => icon(p, 22)).join('');
+  bub.className = 'bubble';
+  if (c.state === 'order') { bub.classList.add('on'); bub.innerHTML = c.order.map(o => ITEMS[o].name).join('<br>'); }
+  else if (c.state === 'wait' && c.peek > 0) { bub.classList.add('on'); bub.innerHTML = c.order.map(o => ITEMS[o].name).join('<br>'); }
+  else if (c.state === 'wait') { bub.classList.add('on', 'q'); bub.textContent = '？'.repeat(c.order.length); }
+  else if (c.state === 'happy') { bub.classList.add('on', 'happy'); bub.textContent = c.msg; }
+  else if (c.state === 'angry') { bub.classList.add('on', 'angry'); bub.innerHTML = c.msg; }
+}
+function selectSeat(i) {
+  if (!running) return;
+  audio();
+  const c = seats[i];
+  if (!c || !['order', 'wait'].includes(c.state)) return;
+  // ？のお客さんをタップすると、注文がもう一度だけ一瞬見える
+  if (c.state === 'wait') c.peek = Math.max(0.5, showTime() * 0.4);
+  if (selected !== i) {
+    const prev = selected; selected = i; if (prev >= 0) renderSeat(prev);
+    hint(c.order.length > 1 ? `この方の注文は${c.order.length}品。${c.order.length}つ選んでね` : 'この方の注文は1品。1つだけ選んでね');
+  }
+  renderSeat(i);
+}
+function target() {
+  if (selected >= 0 && seats[selected] && ['order', 'wait'].includes(seats[selected].state)) return selected;
+  const waiting = seats.map((c, i) => c && ['order', 'wait'].includes(c.state) ? i : -1).filter(i => i >= 0);
+  return waiting.length === 1 ? waiting[0] : -1;
+}
+function serveItem(k) {
+  if (!running) return;
+  audio();
+  const i = target();
+  if (i < 0) { hint('お客様が2人以上の時は、\n必ずお客様を選んでからメニューを選んでね', true); return; }
+  const c = seats[i];
+  c.picks.push(k); sClink();
+  say(LINES[hero].serve(ITEMS[k].name));
+  if (c.picks.length < c.order.length) { selected = i; hint(`あと${c.order.length - c.picks.length}品えらんでね`); renderSeat(i); return; }
+  const a = [...c.picks].sort().join(), b = [...c.order].sort().join();
+  if (a === b) {
+    c.state = 'happy'; c.t = 0;
+    c.msg = msgFor(c, 'happy');
+    score += 10 * c.order.length + (c.pat > c.maxPat * 0.6 ? 5 : 0);
+    served++; sOk();
+    const nl = 1 + Math.floor(served / 5);
+    if (nl > level) { level = nl; toast(`レベル${level}！`); setTimeout(() => say(LINES[hero].level), 900); }
+  } else {
+    fail(i, `${msgFor(c, 'wrong')}<br>注文：${c.order.map(o => ITEMS[o].name).join('・')}`);
+  }
+  if (selected === i) selected = -1;
+  hint(defaultHint());
+  updateHud(); renderSeat(i);
+}
+function fail(i, msg) {
+  const c = seats[i];
+  c.state = 'angry'; c.t = 0; c.msg = msg;
+  ng++; sNg(); updateHud();
+  setTimeout(() => say(LINES[hero].sorry), 300);
+  const scene = $('scene'); scene.classList.remove('shake'); void scene.offsetWidth; scene.classList.add('shake');
+  if (selected === i) selected = -1;
+  renderSeat(i);
+  if (ng >= 3) { running = false; setTimeout(gameOver, 1300); }
+}
+function gameOver() {
+  stopMusic();
+  const best = Math.max(readBest(), score); writeBest(best);
+  $('final').textContent = score;
+  $('overNote').textContent = `${served}人のお客さんに提供 ・ レベル${level} ・ ベスト ${best}`;
+  $('overOv').hidden = false; $('again').focus();
+  say(LINES[hero].bye);
+}
+
+function tick(now) {
+  try { tickBody(now); } catch (e) { console.error(e); }
+  requestAnimationFrame(tick);
+}
+function tickBody(now) {
+  const dt = Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now;
+  if (running) {
+    spawnT -= dt;
+    if (selected < 0 && $('hint').textContent !== defaultHint()) hint(defaultHint());
+    if (spawnT <= 0) spawnT = spawn() ? spawnGap() * (0.8 + Math.random() * 0.4) : 0.4;
+    seats.forEach((c, i) => {
+      if (!c) return;
+      c.t += dt;
+      if (c.state === 'enter' && c.t > 0.45) { c.state = 'order'; c.t = 0; renderSeat(i); }
+      else if (c.state === 'order' && c.t > c.show) { c.state = 'wait'; c.t = 0; renderSeat(i); }
+      if (c.peek > 0) { c.peek -= dt; if (c.peek <= 0 || c.state !== 'wait') { c.peek = 0; renderSeat(i); } }
+      if (c.state === 'order' || c.state === 'wait') {
+        c.pat -= dt;
+        if (c.pat <= 0) fail(i, msgFor(c, 'slow'));
+      }
+      if ((c.state === 'happy' || c.state === 'angry') && c.t > 1.3) { c.state = 'leave'; c.t = 0; renderSeat(i); }
+      else if (c.state === 'leave' && c.t > 0.4) { seats[i] = null; renderSeat(i); }
+    });
+  }
+  if (seats) seats.forEach((c, i) => {
+    const bar = seatEls[i].querySelector('.pat i');
+    if (!c) return;
+    const k = Math.max(0, c.pat / c.maxPat);
+    bar.style.width = `${k * 100}%`;
+    bar.style.background = k > 0.5 ? 'var(--ok)' : k > 0.25 ? 'var(--amber)' : 'var(--ng)';
+  });
+}
+
+// ---------- select screen ----------
+const pickBtns = [...document.querySelectorAll('#choose button')];
+pickBtns.forEach(b => {
+  b.querySelector('.pic').innerHTML = staffSVG(b.dataset.hero, 76);
+  b.addEventListener('click', () => pick(b.dataset.hero));
+});
+function pick(k) {
+  hero = k;
+  pickBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hero === k)));
+  $('staffFace').innerHTML = staffSVG(hero, 48);
+}
+$('open').addEventListener('click', start);
+$('again').addEventListener('click', start);
+$('change').addEventListener('click', () => { $('overOv').hidden = true; $('selectOv').hidden = false; });
+
+seats = Array(SEATS).fill(null); level = 1;
+$('staffFace').innerHTML = staffSVG(hero, 48);
+seats[1] = { cfg: { skin: '#e8b88f', hair: '#5a3420', shirt: '#3a5a8a', style: 0, glasses: true, beard: false }, order: [2], picks: [], state: 'order', t: 0, show: 99, pat: 20, maxPat: 20 };
+seats[2] = { cfg: { skin: '#f6dcc6', hair: '#2a1a1c', shirt: '#7a3a5a', style: 1, glasses: false, beard: false }, order: [8], picks: [], state: 'wait', t: 0, show: 0, pat: 12, maxPat: 20 };
+renderSeat(1); renderSeat(2);
+requestAnimationFrame(tick);
+})();
+</script>
+<style>
+.dl{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;padding:13px 10px;border:0;border-radius:8px;cursor:pointer;
+  background:var(--neon);color:#fff;font-family:var(--body);font-weight:900;font-size:17px;line-height:1.3;box-shadow:0 0 14px rgba(255,92,147,.55)}
+.dl svg{flex:none;width:22px;height:22px}
+.dl span{display:flex;flex-direction:column;align-items:center;white-space:nowrap}
+.dl small{font-size:13px;font-weight:700}
+.dl:active{transform:scale(.98)}
+.dl:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+.steps{margin:0;padding-left:1.4em;text-align:left;font-size:15px;line-height:1.7;color:var(--fg)}
+.steps b{color:var(--amber)}
+.pointer{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);color:var(--amber);font-size:28px;line-height:1;animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+@media (prefers-reduced-motion:reduce){.pointer{animation:none}}
+</style>
+<script>
+// 「アプリをダウンロードして遊ぶ」ボタン。ホーム画面から開いているときは出さない
+(() => {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  let promptEvt = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); promptEvt = e; });
+
+  if (!standalone) {
+    document.getElementById('open').insertAdjacentHTML('afterend',
+      `<button class="dl" id="dlBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>アプリをダウンロードして遊ぶ<small>（無料）</small></span></button>`);
+    document.getElementById('app').insertAdjacentHTML('beforeend', `
+      <div class="ov" id="dlOv" hidden style="z-index:12" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
+        <div class="card"><h2 id="dlTitle"></h2><ol class="steps" id="dlSteps"></ol><button class="btn" id="dlOk">OK</button></div>
+        <div class="pointer" id="dlPointer" hidden aria-hidden="true">↓</div>
+      </div>`);
+    const ov = document.getElementById('dlOv');
+    const show = (title, steps, pointDown) => {
+      document.getElementById('dlTitle').textContent = title;
+      document.getElementById('dlSteps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+      document.getElementById('dlPointer').hidden = !pointDown;
+      ov.hidden = false; document.getElementById('dlOk').focus();
+    };
+    const close = () => { ov.hidden = true; document.getElementById('dlBtn').focus(); };
+    document.getElementById('dlOk').addEventListener('click', close);
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) close(); });
+
+    document.getElementById('dlBtn').addEventListener('click', async () => {
+      if (promptEvt) {
+        promptEvt.prompt();
+        await promptEvt.userChoice.catch(() => {});
+        promptEvt = null;
+      } else if (ios) {
+        show('iPhoneに追加する方法', ['画面下の <b>共有ボタン</b>（四角から矢印が上に出ているマーク）を押す', '<b>「ホーム画面に追加」</b>を押す', '右上の <b>「追加」</b>を押す'], true);
+      } else if (android) {
+        show('Androidに追加する方法', ['右上の <b>︙</b>（縦に点3つ）を押す', '<b>「アプリをインストール」</b>か<b>「ホーム画面に追加」</b>を押す', '<b>「インストール」</b>を押す'], false);
+      } else {
+        location.href = 'install.html';
+      }
+    });
+    addEventListener('appinstalled', () => { const b = document.getElementById('dlBtn'); if (b) b.hidden = true; });
+  }
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
+</script>
+</body>
+</html>
