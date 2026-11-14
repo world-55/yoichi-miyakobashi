@@ -137,6 +137,7 @@ body{
 .card h1{font-size:28px;color:#ffd5e4;text-shadow:0 0 10px var(--neon)}
 .card h2{font-size:22px}
 .note{font-size:12px;color:var(--muted);line-height:1.65;margin:0}
+.note .oneline{white-space:nowrap;letter-spacing:-.02em;font-size:min(12px,3.15vw)}
 .choose{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .choose button{background:#1a1114;border:2px solid rgba(255,255,255,.12);border-radius:12px;color:var(--fg);font-family:var(--body);font-weight:900;font-size:12px;padding:8px 2px 7px;white-space:nowrap;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
 .choose button[aria-pressed="true"]{border-color:var(--amber);background:#2c1d16}
@@ -183,7 +184,7 @@ body{
   <div class="ov" id="selectOv">
     <div class="card">
       <h1>BAR 夜市</h1>
-      <p class="note">お客さんの注文は一瞬で消えちゃう。<br>覚えておいて、同じ品を出してあげてね。<br>間違えるか、待たせすぎるとNG。3回でゲームオーバー。</p>
+      <p class="note">お客さんの注文は一瞬で消えちゃう。<br>覚えておいて、同じ品を出してあげてね。<br><span class="oneline">間違えるか待たせすぎるとNG。3回でゲームオーバー。</span></p>
       <div class="choose" id="choose">
         <button data-hero="mama" aria-pressed="true"><span class="pic"></span>まこちゃんママ</button>
         <button data-hero="boy" aria-pressed="false"><span class="pic"></span>みっちゃんママ</button>
@@ -773,7 +774,7 @@ renderSeat(1); renderSeat(2);
 requestAnimationFrame(tick);
 })();
 </script>
-<script>window.APP_VERSION = '202611150757';</script>
+<script>window.APP_VERSION = '202611150804';</script>
 <style>
 .upd{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:calc(100% - 24px);max-width:440px;box-sizing:border-box;
   display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;background:var(--paper);color:#2a1a14;border:3px solid var(--amber);border-radius:12px;
