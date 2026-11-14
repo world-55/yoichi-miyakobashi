@@ -63,9 +63,10 @@ body{
 .shelf{position:absolute;left:0;right:0;top:52px;height:62px;display:flex;justify-content:center;align-items:flex-end;gap:4px;padding-inline:12px}
 .shelf::after{content:"";position:absolute;left:8px;right:8px;bottom:-4px;height:5px;background:var(--wood);border-radius:2px;box-shadow:0 0 14px rgba(234,164,63,.35)}
 .shelf svg{flex:none}
-.staff{position:absolute;left:8px;top:4px;display:flex;align-items:flex-start;gap:6px;z-index:7}
-.staff .say{margin-top:6px}
-.staff .say{background:var(--paper);color:#2a1a14;font-weight:700;font-size:12px;padding:5px 9px;border-radius:12px 12px 12px 2px;max-width:200px;line-height:1.35;opacity:0;transform:translateY(4px);transition:.2s}
+.staff{position:absolute;left:8px;right:8px;top:4px;display:flex;align-items:flex-start;gap:6px;z-index:7;pointer-events:none}
+/* ママのセリフは「BAR 夜市」の看板と同じ高さの1行で出す */
+.staff .say{margin-top:6px;height:35px;box-sizing:border-box;display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.staff .say{background:var(--paper);color:#2a1a14;font-weight:900;font-size:14px;padding:0 12px;border-radius:16px 16px 16px 3px;line-height:1;opacity:0;transform:translateY(4px);transition:.2s}
 .staff .say.on{opacity:1;transform:none}
 .counter{position:absolute;left:0;right:0;bottom:0;height:45%;}
 .counter::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;background:linear-gradient(#8a5230,var(--wood));box-shadow:0 4px 10px rgba(0,0,0,.5)}
@@ -781,7 +782,7 @@ renderSeat(1); renderSeat(2);
 requestAnimationFrame(tick);
 })();
 </script>
-<script>window.APP_VERSION = '202611150824';</script>
+<script>window.APP_VERSION = '202611150836';</script>
 <style>
 .upd{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:calc(100% - 24px);max-width:440px;box-sizing:border-box;
   display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;background:var(--paper);color:#2a1a14;border:3px solid var(--amber);border-radius:12px;
