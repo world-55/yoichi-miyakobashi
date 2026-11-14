@@ -1,6 +1,6 @@
 // 一度開けば電波がなくても遊べるようにする。
 // ゲームのファイルは「まずネット、だめなら保存分」なので、更新はすぐ届く。
-const CACHE = 'yoichi-202611150810';
+const CACHE = 'yoichi-202611150824';
 const FILES = ['./', 'index.html', 'install.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

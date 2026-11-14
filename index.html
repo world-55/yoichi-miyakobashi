@@ -124,6 +124,8 @@ body{
 .flower .fname{margin-top:1px;width:100%;box-sizing:border-box;background:var(--paper);color:#2a1a14;font-size:8.5px;letter-spacing:-.03em;font-weight:900;line-height:1.25;padding:2px 1px;border-radius:2px;text-align:center;
   word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .flower.empty{visibility:hidden}
+.pr{margin:0;font-size:14px;font-weight:900;line-height:1.6;color:#ffd5e4}
+.ov{overflow-y:auto}
 .adban{flex:none;position:relative;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 10px;box-sizing:border-box;
   background:var(--panel);border:1px solid rgba(234,164,63,.35);border-radius:8px;overflow:hidden;color:var(--fg);text-decoration:none;font-weight:900;font-size:13px;text-align:center}
 .adban .adtag{position:absolute;top:4px;left:4px}
@@ -209,6 +211,8 @@ body{
   <div class="ov" id="contactOv" hidden style="z-index:12" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
     <div class="card">
       <h2 id="contactTitle">お問い合わせ</h2>
+      <div class="flowers" id="ctFlowers" hidden aria-label="お祝いの花の見本"></div>
+      <p class="pr">お店様や企業様や個人様のお名前を<br>アプリのゲームに入れることが<br>実現できますので<br>お気軽にご相談ください(^^)</p>
       <p class="note" id="contactNote">アプリゲームと広告のお問い合わせは、<br>下記のメールからお問い合わせください。</p>
       <a class="mail" id="mailAddr" href="mailto:appstudyjapan@gmail.com" target="_blank" rel="noopener">appstudyjapan@gmail.com</a>
       <button class="btn sub" id="copyMail">アドレスをコピー</button>
@@ -269,6 +273,9 @@ function setupFlowers() {
     box.appendChild(d);
   });
   box.hidden = false;
+  // お問い合わせ画面にも、同じお祝いの花を見本として出す
+  const ct = document.getElementById('ctFlowers');
+  ct.innerHTML = box.innerHTML; ct.hidden = false;
 }
 setupFlowers();
 function setupAds() {
@@ -774,7 +781,7 @@ renderSeat(1); renderSeat(2);
 requestAnimationFrame(tick);
 })();
 </script>
-<script>window.APP_VERSION = '202611150810';</script>
+<script>window.APP_VERSION = '202611150824';</script>
 <style>
 .upd{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:calc(100% - 24px);max-width:440px;box-sizing:border-box;
   display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;background:var(--paper);color:#2a1a14;border:3px solid var(--amber);border-radius:12px;
