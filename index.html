@@ -773,7 +773,19 @@ renderSeat(1); renderSeat(2);
 requestAnimationFrame(tick);
 })();
 </script>
+<script>window.APP_VERSION = '202611150757';</script>
 <style>
+.upd{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:calc(100% - 24px);max-width:440px;box-sizing:border-box;
+  display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;background:var(--paper);color:#2a1a14;border:3px solid var(--amber);border-radius:12px;
+  font-family:var(--body);font-weight:900;font-size:14px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.55)}
+.upd span{flex:1}
+.upd button,.ver button{font-family:var(--body);font-weight:900;cursor:pointer;border-radius:6px}
+.upd button{flex:none;border:0;background:var(--neon);color:#fff;font-size:14px;padding:9px 12px}
+.ver{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;white-space:nowrap}
+.ver em:empty{display:none}
+.ver em{font-style:normal;color:var(--ok);font-weight:700}
+.ver button.new{border:0;background:var(--neon);color:#fff;font-size:12px;padding:7px 9px;box-shadow:0 0 10px rgba(255,92,147,.5)}
+.upd button:focus-visible,.ver button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .dl{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;padding:13px 10px;border:0;border-radius:8px;cursor:pointer;
   background:var(--neon);color:#fff;font-family:var(--body);font-weight:900;font-size:17px;line-height:1.3;box-shadow:0 0 14px rgba(255,92,147,.55)}
 .dl svg{flex:none;width:22px;height:22px}
@@ -833,6 +845,41 @@ requestAnimationFrame(tick);
     addEventListener('appinstalled', () => { const b = document.getElementById('dlBtn'); if (b) b.hidden = true; });
   }
   if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+})();
+
+// 最新版にする。スマホに保存した古い版を消してから読み込み直すので、iPhone でも Android でも同じように入れ替わる
+(() => {
+  const mine = window.APP_VERSION;
+  const fmt = v => `${v.slice(0, 4)}.${v.slice(4, 6)}.${v.slice(6, 8)}-${v.slice(8, 12)}`;
+  const latest = () => fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(j => j.version).catch(() => null);
+  async function updateNow() {
+    try {
+      const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.unregister();
+      await Promise.all((await caches.keys()).map(k => caches.delete(k)));
+    } catch (e) {}
+    location.replace(`${location.pathname}?v=${Date.now()}`);
+  }
+
+  // バージョンの横：古い版なら「新しいバージョンに更新」ボタン、最新なら「最新版です」
+  document.querySelector('#selectOv .card').insertAdjacentHTML('beforeend',
+    `<div class="ver"><span>Ver.${fmt(mine)}</span><em id="verState"></em><button id="verBtn" class="new" hidden>新しいバージョンに更新</button></div>`);
+  const btn = document.getElementById('verBtn');
+  btn.addEventListener('click', () => { btn.textContent = '更新中…'; updateNow(); });
+
+  // 開いたとき・アプリに戻ってきたときに確かめて、新しい版があれば知らせる
+  async function check() {
+    const v = await latest();
+    if (!v) return;
+    btn.hidden = v === mine;
+    document.getElementById('verState').textContent = v === mine ? '最新版です' : '';
+    if (v === mine || document.getElementById('updBar')) return;
+    document.body.insertAdjacentHTML('beforeend',
+      `<div class="upd" id="updBar" role="status"><span>新しいバージョンがあります</span><button id="updBtn">最新版にする</button></div>`);
+    document.getElementById('updBtn').addEventListener('click', e => { e.currentTarget.textContent = '更新中…'; updateNow(); });
+  }
+  check();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
 })();
 </script>
 </body>

@@ -1,6 +1,6 @@
 // 一度開けば電波がなくても遊べるようにする。
 // ゲームのファイルは「まずネット、だめなら保存分」なので、更新はすぐ届く。
-const CACHE = 'yoichi-20261115073949';
+const CACHE = 'yoichi-202611150757';
 const FILES = ['./', 'index.html', 'install.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -19,6 +19,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   const font = url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com';
   if (url.origin !== location.origin && !font) return;
+  if (url.pathname.endsWith('version.json')) return; // 版の確認はいつもネットで
 
   if (font) {
     // フォントは保存分を先に使い、裏で新しくする
