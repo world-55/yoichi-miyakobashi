@@ -232,7 +232,7 @@ const ADS = {
   banner: null,
   // お祝いの花（6マス）。企業名を入れると、その場所に花が出る。空文字 '' の場所は花を出さない。全部空なら列ごと非表示
   // { name, span: 2, count: 3 } で2マス分つなげて、花を3つ並べた大きい枠になる
-  flowers: ['丸小ハム', '伊藤大商事', '三角紅商事', '自由軒', { name: 'SOFTBANDAI株式会社', span: 2, count: 3 }],
+  flowers: ['丸小ハム', '伊藤大商事', '三角紅商事', '自由軒', { name: 'SOFTBONDAI株式会社', span: 2, count: 3 }],
 };
 const FLOWER_COLS = [['#ff7aa8', '#ffd1e0', '#ff4f86'], ['#ffd34f', '#fff1b8', '#ff9f2e'], ['#ff6b5a', '#ffc2b8', '#e83a3a'], ['#c99bff', '#efe0ff', '#9a5cf0'], ['#7fd0ff', '#e0f4ff', '#3aa0e8'], ['#ffffff', '#ffe6ef', '#ff9cc0']];
 function flowerSVG(i) {
@@ -774,7 +774,7 @@ renderSeat(1); renderSeat(2);
 requestAnimationFrame(tick);
 })();
 </script>
-<script>window.APP_VERSION = '202611150804';</script>
+<script>window.APP_VERSION = '202611150810';</script>
 <style>
 .upd{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:calc(100% - 24px);max-width:440px;box-sizing:border-box;
   display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;background:var(--paper);color:#2a1a14;border:3px solid var(--amber);border-radius:12px;
